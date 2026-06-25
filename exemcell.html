@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시험 감독표 생성기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f7fa;--card:#fff;--pri:#2563eb;--pri-h:#1d4ed8;--pri-l:#dbeafe;--txt:#1e293b;--txt2:#64748b;--bdr:#e2e8f0;--grn:#16a34a;--grn-l:#dcfce7;--red:#dc2626;--red-l:#fee2e2;--yel:#fef3c7;--pur:#f3e8ff;--grn2:#d1fae5;--warn:#f59e0b}
+body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--txt);line-height:1.5}
+.app{max-width:1200px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.subtitle{color:var(--txt2);font-size:.85rem;margin-bottom:20px}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--bdr);margin-bottom:20px;overflow-x:auto}
+.tab{padding:10px 18px;cursor:pointer;border:none;background:none;font-size:.9rem;color:var(--txt2);border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;font-family:inherit}
+.tab.active{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+.tab:hover{color:var(--pri)}
+.card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid var(--bdr)}
+.card h2{font-size:1.1rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h3{font-size:.95rem;font-weight:600;margin:16px 0 8px;color:var(--txt2)}
+.btn{padding:8px 16px;border-radius:8px;border:1px solid var(--bdr);background:var(--card);cursor:pointer;font-size:.85rem;font-family:inherit;transition:.15s}
+.btn:hover{border-color:var(--pri);color:var(--pri)}
+.btn-pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn-pri:hover{background:var(--pri-h)}
+.btn-sm{padding:4px 10px;font-size:.8rem}
+.btn-red{color:var(--red);border-color:var(--red)}
+.btn-red:hover{background:var(--red-l)}
+.btn-grn{background:var(--grn);color:#fff;border-color:var(--grn)}
+.btn-grn:hover{background:#15803d}
+input,select,textarea{padding:6px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:.85rem;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-l)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th,td{padding:6px 8px;border:1px solid var(--bdr);text-align:center}
+th{background:#f1f5f9;font-weight:600;position:sticky;top:0;z-index:1}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:500}
+.tag-y{background:var(--yel);color:#92400e}
+.tag-p{background:var(--pur);color:#6b21a8}
+.tag-g{background:var(--grn2);color:#166534}
+.flex{display:flex;gap:8px;align-items:center}
+.flex-w{display:flex;flex-wrap:wrap;gap:6px}
+.grow{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mb8{margin-bottom:8px}.mb16{margin-bottom:16px}
+.text-s{font-size:.8rem;color:var(--txt2)}
+.text-c{text-align:center}
+.scroll-x{overflow-x:auto}
+.cell-y{background:#fef9e7!important}
+.cell-p{background:#f5eef8!important}
+.cell-g{background:#eafaf1!important}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;font-size:.75rem;font-weight:600;padding:0 6px}
+.badge-b{background:var(--pri-l);color:var(--pri)}
+.badge-r{background:var(--red-l);color:var(--red)}
+.badge-g{background:var(--grn-l);color:var(--grn)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.stat-box{background:#f8fafc;border-radius:8px;padding:12px;text-align:center;border:1px solid var(--bdr)}
+.stat-box .val{font-size:1.4rem;font-weight:700;color:var(--pri)}
+.stat-box .lbl{font-size:.75rem;color:var(--txt2)}
+.progress{width:100%;height:6px;background:var(--bdr);border-radius:3px;overflow:hidden;margin:8px 0}
+.progress-bar{height:100%;background:var(--pri);border-radius:3px;transition:width .3s}
+.alert{padding:12px 16px;border-radius:8px;font-size:.85rem;margin-bottom:12px}
+.alert-info{background:var(--pri-l);color:#1e40af;border:1px solid #93c5fd}
+.alert-warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.alert-ok{background:var(--grn-l);color:#166534;border:1px solid #86efac}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:.78rem;background:#f1f5f9;border:1px solid var(--bdr)}
+.chip .x{cursor:pointer;color:var(--txt2);font-weight:700}
+.chip .x:hover{color:var(--red)}
+.upload-zone{border:2px dashed var(--bdr);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:.2s}
+.upload-zone:hover{border-color:var(--pri);background:var(--pri-l)}
+.upload-zone input{display:none}
+@media(max-width:768px){.grid2{grid-template-columns:1fr}.tabs{gap:0}.tab{padding:8px 12px;font-size:.8rem}}
+</style>
+</head>
+<body>
+<div class="app" id="root"></div>
+<script>
+// ===== STATE =====
+const STATE = {
+  tab: 0,
+  teachers: [], // [{name, id, fullName, homeroom}]
+  days: [], // [{date, label, periods, slotPatterns:{className:[types]}, hallway:{floor:[periods]}}]
+  unavailable: [], // [{teacher, date, period}] period=null means whole day
+  prevCounts: {}, // {fullName: {정,자,복,총,막}}
+  specialConstraints: {lastPeriodLimits:{},avoid3Consec:true},
+  result: null,
+  solving: false,
+  solveProgress: 0,
+};
+
+// Default classes
+const CLASSES = ['1학년 1반','1학년 2반','1학년 3반','1학년 4반','1학년 5반','1학년 6반',
+  '2학년 1반','2학년 2반','2학년 3반','2학년 4반','2학년 5반','2학년 6반',
+  '3학년 1반','3학년 2반','3학년 3반','3학년 4반','3학년 5반','3학년 6반'];
+const FLOORS = ['1층','2층','3층','4층'];
+
+function saveState(){
+  try{localStorage.setItem('examScheduler',JSON.stringify({
+    teachers:STATE.teachers,days:STATE.days,unavailable:STATE.unavailable,
+    prevCounts:STATE.prevCounts,specialConstraints:STATE.specialConstraints
+  }))}catch(e){}
+}
+function loadState(){
+  try{
+    const d=JSON.parse(localStorage.getItem('examScheduler'));
+    if(d){Object.assign(STATE,d);STATE.result=null;STATE.solving=false}
+  }catch(e){}
+}
+
+// ===== RENDER =====
+function h(tag,props,...ch){
+  const el=document.createElement(tag);
+  if(props)Object.entries(props).forEach(([k,v])=>{
+    if(k==='on'&&typeof v==='object')Object.entries(v).forEach(([e,fn])=>el.addEventListener(e,fn));
+    else if(k==='className')el.className=v;
+    else if(k==='style'&&typeof v==='object')Object.assign(el.style,v);
+    else if(k==='innerHTML')el.innerHTML=v;
+    else if(k==='value')el.value=v;
+    else if(k==='checked')el.checked=v;
+    else if(k==='selected')el.selected=v;
+    else if(k==='disabled')el.disabled=v;
+    else el.setAttribute(k,v);
+  });
+  ch.flat(9).forEach(c=>{if(c!=null&&c!==false)el.append(typeof c==='string'||typeof c==='number'?document.createTextNode(c):c)});
+  return el;
+}
+
+const TABS=['📋 교사 관리','📅 시험 설정','🚫 감독 불가','📊 이전 시험','⚙️ 추가 조건','🎯 감독표 생성'];
+
+function render(){
+  const root=document.getElementById('root');
+  root.innerHTML='';
+  root.append(
+    h('h1',null,'📝 시험 감독표 생성기'),
+    h('p',{className:'subtitle'},'조건을 설정하고 공평한 감독표를 자동 생성합니다'),
+    renderTabs(),
+    renderTabContent()
+  );
+}
+
+function renderTabs(){
+  return h('div',{className:'tabs'},...TABS.map((t,i)=>
+    h('button',{className:'tab'+(STATE.tab===i?' active':''),on:{click:()=>{STATE.tab=i;render()}}},t)
+  ));
+}
+
+function renderTabContent(){
+  switch(STATE.tab){
+    case 0:return renderTeachers();
+    case 1:return renderSchedule();
+    case 2:return renderUnavailable();
+    case 3:return renderPrevCounts();
+    case 4:return renderConstraints();
+    case 5:return renderSolver();
+  }
+}
+
+// ===== TAB 0: TEACHERS =====
+function renderTeachers(){
+  const card=h('div',{className:'card'});
+  card.append(h('h2',null,'교사 목록 및 담임 배정'));
+  card.append(h('p',{className:'text-s mb8'},'감독에 참여하는 교사 목록입니다. 이름 뒤 번호는 식별번호로 자동 생성됩니다.'));
+  
+  // Add teacher form
+  const addRow=h('div',{className:'flex mb16'});
+  const nameIn=h('input',{placeholder:'이름 (예: 고미소)',style:{width:'140px'}});
+  const idIn=h('input',{placeholder:'번호 (예: 01)',style:{width:'80px'}});
+  const hrSel=h('select',null,h('option',{value:''},'담임반 없음'),...CLASSES.map(c=>h('option',{value:c},c)));
+  addRow.append(nameIn,idIn,hrSel,h('button',{className:'btn btn-pri',on:{click:()=>{
+    const name=nameIn.value.trim(),id=idIn.value.trim();
+    if(!name||!id)return alert('이름과 번호를 입력하세요');
+    if(STATE.teachers.find(t=>t.id===id))return alert('중복 번호입니다');
+    STATE.teachers.push({name,id,fullName:`${name}(${id})`,homeroom:hrSel.value});
+    STATE.teachers.sort((a,b)=>a.id.localeCompare(b.id));
+    saveState();render();
+  }}},'추가'));
+  card.append(addRow);
+  
+  if(STATE.teachers.length){
+    const tbl=h('table');
+    tbl.append(h('tr',null,h('th',null,'이름'),h('th',null,'번호'),h('th',null,'전체 표기'),h('th',null,'담임반'),h('th',null,'')));
+    STATE.teachers.forEach((t,i)=>{
+      const sel=h('select',{on:{change:e=>{STATE.teachers[i].homeroom=e.target.value;saveState();render()}}},
+        h('option',{value:''},'없음'),...CLASSES.map(c=>{const o=h('option',{value:c},c);if(c===t.homeroom)o.selected=true;return o}));
+      tbl.append(h('tr',null,
+        h('td',null,t.name),h('td',null,t.id),h('td',null,t.fullName),
+        h('td',null,sel),
+        h('td',null,h('button',{className:'btn btn-sm btn-red',on:{click:()=>{STATE.teachers.splice(i,1);saveState();render()}}},'삭제'))
+      ));
+    });
+    card.append(h('div',{className:'scroll-x'},tbl));
+    card.append(h('p',{className:'text-s mt8'},`총 ${STATE.teachers.length}명`));
+  }
+  return card;
+}
+
+// ===== TAB 1: SCHEDULE =====
+function renderSchedule(){
+  const wrap=h('div');
+  
+  // Add day
+  const addCard=h('div',{className:'card'});
+  addCard.append(h('h2',null,'시험 일정 추가'));
+  const dateIn=h('input',{type:'date'});
+  const perIn=h('select',null,h('option',{value:'3'},'3교시'),h('option',{value:'4',selected:true},'4교시'));
+  addCard.append(h('div',{className:'flex mb8'},
+    h('span',null,'날짜:'),dateIn,h('span',null,'교시 수:'),perIn,
+    h('button',{className:'btn btn-pri',on:{click:()=>{
+      const date=dateIn.value;if(!date)return alert('날짜를 선택하세요');
+      const numP=parseInt(perIn.value);
+      const label=new Date(date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+      const periods=Array.from({length:numP},(_,i)=>i+1);
+      // Default patterns: all 자습 for 1교시, 정감독 for others
+      const slotPatterns={};
+      CLASSES.forEach(c=>{slotPatterns[c]=periods.map(p=>p===1?'자습':'정감독')});
+      const hallway={};
+      FLOORS.forEach(f=>{hallway[f]=periods.filter(p=>p>=2)});
+      STATE.days.push({date,label,periods,slotPatterns,hallway});
+      STATE.days.sort((a,b)=>a.date.localeCompare(b.date));
+      saveState();render();
+    }}},'추가')
+  ));
+  wrap.append(addCard);
+  
+  // Each day
+  STATE.days.forEach((day,di)=>{
+    const dc=h('div',{className:'card'});
+    dc.append(h('div',{className:'flex mb8'},
+      h('h2',{className:'grow'},`${day.label} (${day.periods.length}교시)`),
+      h('button',{className:'btn btn-sm btn-red',on:{click:()=>{STATE.days.splice(di,1);saveState();render()}}},'삭제')
+    ));
+    dc.append(h('p',{className:'text-s mb8'},'각 칸을 클릭하면 자습↔정감독 전환됩니다. 복도감독 교시도 클릭으로 켜고 끌 수 있습니다.'));
+    
+    // Slot pattern table
+    const tbl=h('table');
+    tbl.append(h('tr',null,h('th',null,'학급'),...day.periods.map(p=>h('th',null,`${p}교시`))));
+    CLASSES.forEach(c=>{
+      const row=h('tr',null,h('td',null,c));
+      day.periods.forEach((p,pi)=>{
+        const type=day.slotPatterns[c]?.[pi]||'자습';
+        const td=h('td',{className:type==='자습'?'cell-y':'cell-p',style:{cursor:'pointer'},on:{click:()=>{
+          if(!day.slotPatterns[c])day.slotPatterns[c]=day.periods.map(()=>'자습');
+          day.slotPatterns[c][pi]=day.slotPatterns[c][pi]==='자습'?'정감독':'자습';
+          saveState();render();
+        }}},h('span',{className:type==='자습'?'tag tag-y':'tag tag-p'},type));
+        row.append(td);
+      });
+      tbl.append(row);
+    });
+    // Hallway rows
+    FLOORS.forEach(f=>{
+      const row=h('tr',null,h('td',null,f));
+      day.periods.forEach(p=>{
+        const active=day.hallway[f]?.includes(p);
+        const td=h('td',{className:active?'cell-g':'',style:{cursor:'pointer'},on:{click:()=>{
+          if(!day.hallway[f])day.hallway[f]=[];
+          if(active)day.hallway[f]=day.hallway[f].filter(x=>x!==p);
+          else day.hallway[f].push(p);
+          day.hallway[f].sort();
+          saveState();render();
+        }}},active?h('span',{className:'tag tag-g'},'복도'):'—');
+        row.append(td);
+      });
+      tbl.append(row);
+    });
+    dc.append(h('div',{className:'scroll-x'},tbl));
+    wrap.append(dc);
+  });
+  
+  return wrap;
+}
+
+// ===== TAB 2: UNAVAILABLE =====
+function renderUnavailable(){
+  const card=h('div',{className:'card'});
+  card.append(h('h2',null,'감독 불가 설정'));
+  card.append(h('p',{className:'text-s mb8'},'날짜만 선택하면 해당 날짜 전체 감독 불가, 교시까지 선택하면 해당 교시만 불가입니다.'));
+  
+  const tSel=h('select',null,h('option',{value:''},'선택...'),...STATE.teachers.map(t=>h('option',{value:t.fullName},t.fullName)));
+  const dSel=h('select',null,h('option',{value:''},'날짜...'),...STATE.days.map(d=>h('option',{value:d.date},d.label)));
+  const pSel=h('select',null,h('option',{value:''},'전체(종일)'),...[1,2,3,4].map(p=>h('option',{value:p},`${p}교시`)));
+  
+  card.append(h('div',{className:'flex mb16'},tSel,dSel,pSel,
+    h('button',{className:'btn btn-pri',on:{click:()=>{
+      const teacher=tSel.value,date=dSel.value,period=pSel.value?parseInt(pSel.value):null;
+      if(!teacher||!date)return alert('교사와 날짜를 선택하세요');
+      if(STATE.unavailable.find(u=>u.teacher===teacher&&u.date===date&&u.period===period))return;
+      STATE.unavailable.push({teacher,date,period});
+      STATE.unavailable.sort((a,b)=>a.teacher.localeCompare(b.teacher)||a.date.localeCompare(b.date));
+      saveState();render();
+    }}},'추가')
+  ));
+  
+  if(STATE.unavailable.length){
+    const grouped={};
+    STATE.unavailable.forEach(u=>{
+      if(!grouped[u.teacher])grouped[u.teacher]=[];
+      const day=STATE.days.find(d=>d.date===u.date);
+      grouped[u.teacher].push({...u,dayLabel:day?day.label:u.date});
+    });
+    Object.entries(grouped).forEach(([teacher,items])=>{
+      card.append(h('div',{className:'flex-w mb8',style:{alignItems:'center'}},
+        h('strong',{style:{minWidth:'100px'}},teacher),
+        ...items.map((u,i)=>{
+          const idx=STATE.unavailable.findIndex(x=>x.teacher===u.teacher&&x.date===u.date&&x.period===u.period);
+          return h('span',{className:'chip'},
+            u.dayLabel+(u.period?` ${u.period}교시`:' (종일)'),
+            h('span',{className:'x',on:{click:()=>{STATE.unavailable.splice(idx,1);saveState();render()}}},'✕')
+          );
+        })
+      ));
+    });
+  }
+  return card;
+}
+
+// ===== TAB 3: PREV COUNTS =====
+function renderPrevCounts(){
+  const card=h('div',{className:'card'});
+  card.append(h('h2',null,'이전 시험(중간고사) 감독 횟수'));
+  card.append(h('p',{className:'text-s mb8'},'중간고사 감독 횟수를 입력하면 기말고사와 합산하여 공평하게 배분합니다.'));
+  
+  if(!STATE.teachers.length)return card.append(h('p',null,'먼저 교사를 추가하세요.')),card;
+  
+  const tbl=h('table');
+  tbl.append(h('tr',null,h('th',null,'이름'),h('th',null,'정감독'),h('th',null,'자습'),h('th',null,'복도'),h('th',null,'총합'),h('th',null,'마지막교시')));
+  STATE.teachers.forEach(t=>{
+    const pc=STATE.prevCounts[t.fullName]||{정:0,자:0,복:0,총:0,막:0};
+    const mkIn=(key,val)=>{
+      const inp=h('input',{type:'number',value:val,style:{width:'50px',textAlign:'center'},on:{change:e=>{
+        if(!STATE.prevCounts[t.fullName])STATE.prevCounts[t.fullName]={정:0,자:0,복:0,총:0,막:0};
+        STATE.prevCounts[t.fullName][key]=parseInt(e.target.value)||0;
+        saveState();
+      }}});return inp;
+    };
+    tbl.append(h('tr',null,h('td',null,t.fullName),
+      h('td',null,mkIn('정',pc.정)),h('td',null,mkIn('자',pc.자)),
+      h('td',null,mkIn('복',pc.복)),h('td',null,mkIn('총',pc.총)),
+      h('td',null,mkIn('막',pc.막))
+    ));
+  });
+  card.append(h('div',{className:'scroll-x'},tbl));
+  return card;
+}
+
+// ===== TAB 4: CONSTRAINTS =====
+function renderConstraints(){
+  const card=h('div',{className:'card'});
+  card.append(h('h2',null,'추가 조건 설정'));
+  
+  // 3-consecutive
+  const chk=h('input',{type:'checkbox',checked:STATE.specialConstraints.avoid3Consec,on:{change:e=>{
+    STATE.specialConstraints.avoid3Consec=e.target.checked;saveState();
+  }}});
+  card.append(h('label',{className:'flex mb16',style:{cursor:'pointer'}},chk,h('span',null,'3교시 연속 감독 최대한 방지')));
+  
+  // Last period limits
+  card.append(h('h3',null,'마지막교시 횟수 제한 (선택)'));
+  card.append(h('p',{className:'text-s mb8'},'특정 교사의 기말 마지막교시 횟수를 제한할 수 있습니다.'));
+  
+  const tSel=h('select',null,h('option',{value:''},'교사 선택...'),...STATE.teachers.map(t=>h('option',{value:t.fullName},t.fullName)));
+  const numIn=h('input',{type:'number',value:2,style:{width:'60px'},min:0,max:10});
+  card.append(h('div',{className:'flex mb8'},tSel,h('span',null,'마지막교시 최대'),numIn,h('span',null,'회'),
+    h('button',{className:'btn btn-pri btn-sm',on:{click:()=>{
+      if(!tSel.value)return;
+      STATE.specialConstraints.lastPeriodLimits[tSel.value]=parseInt(numIn.value);
+      saveState();render();
+    }}},'설정')
+  ));
+  
+  const lims=STATE.specialConstraints.lastPeriodLimits;
+  if(Object.keys(lims).length){
+    card.append(h('div',{className:'flex-w mt8'},...Object.entries(lims).map(([t,n])=>
+      h('span',{className:'chip'},`${t}: 최대 ${n}회`,
+        h('span',{className:'x',on:{click:()=>{delete lims[t];saveState();render()}}},'✕'))
+    )));
+  }
+  return card;
+}
+
+// ===== TAB 5: SOLVER =====
+function renderSolver(){
+  const wrap=h('div');
+  
+  // Validation
+  const issues=[];
+  if(!STATE.teachers.length)issues.push('교사가 없습니다');
+  if(!STATE.days.length)issues.push('시험 일정이 없습니다');
+  
+  if(issues.length){
+    wrap.append(h('div',{className:'alert alert-warn'},'⚠️ '+issues.join(', ')+' — 먼저 설정을 완료하세요.'));
+    return wrap;
+  }
+  
+  // Summary
+  const sumCard=h('div',{className:'card'});
+  let totalSlots=0;
+  STATE.days.forEach(day=>{
+    CLASSES.forEach(c=>{totalSlots+=day.periods.length});
+    FLOORS.forEach(f=>{totalSlots+=(day.hallway[f]||[]).length});
+  });
+  sumCard.append(h('h2',null,'현재 설정 요약'));
+  sumCard.append(h('div',{className:'stat-grid'},
+    h('div',{className:'stat-box'},h('div',{className:'val'},STATE.teachers.length),h('div',{className:'lbl'},'감독 교사')),
+    h('div',{className:'stat-box'},h('div',{className:'val'},STATE.days.length),h('div',{className:'lbl'},'시험 일수')),
+    h('div',{className:'stat-box'},h('div',{className:'val'},totalSlots),h('div',{className:'lbl'},'총 감독 슬롯')),
+    h('div',{className:'stat-box'},h('div',{className:'val'},STATE.unavailable.length),h('div',{className:'lbl'},'감독불가 조건')),
+  ));
+  wrap.append(sumCard);
+  
+  // Solve button
+  const solveCard=h('div',{className:'card'});
+  if(STATE.solving){
+    solveCard.append(h('h2',null,'⏳ 감독표 생성 중...'));
+    solveCard.append(h('div',{className:'progress'},h('div',{className:'progress-bar',style:{width:STATE.solveProgress+'%'}})));
+    solveCard.append(h('p',{className:'text-s text-c'},'최적의 배치를 탐색하고 있습니다...'));
+  }else{
+    solveCard.append(h('div',{className:'text-c'},
+      h('button',{className:'btn btn-grn',style:{fontSize:'1.1rem',padding:'14px 40px'},on:{click:startSolve}},'🎯 감독표 생성하기')
+    ));
+  }
+  wrap.append(solveCard);
+  
+  // Results
+  if(STATE.result){
+    wrap.append(renderResults());
+  }
+  return wrap;
+}
+
+// ===== SOLVER ENGINE =====
+function buildSlots(){
+  const slots=[];
+  STATE.days.forEach(day=>{
+    const maxP=Math.max(...day.periods);
+    CLASSES.forEach(c=>{
+      day.periods.forEach((p,pi)=>{
+        const type=(day.slotPatterns[c]?.[pi])||'자습';
+        slots.push({day:day.date,dayLabel:day.label,loc:c,period:p,type,maxP});
+      });
+    });
+    FLOORS.forEach(f=>{
+      (day.hallway[f]||[]).forEach(p=>{
+        slots.push({day:day.date,dayLabel:day.label,loc:f,period:p,type:'복도',maxP});
+      });
+    });
+  });
+  return slots;
+}
+
+function isUnavail(teacherFull,date,period){
+  return STATE.unavailable.some(u=>u.teacher===teacherFull&&u.date===date&&(u.period===null||u.period===period));
+}
+
+function getHomeroom(teacherFull){
+  const t=STATE.teachers.find(x=>x.fullName===teacherFull);
+  return t?t.homeroom:'';
+}
+
+function would3Consec(existing,newP){
+  const test=new Set(existing);test.add(newP);
+  const sp=[...test].sort((a,b)=>a-b);
+  for(let i=0;i<sp.length-2;i++)if(sp[i+1]===sp[i]+1&&sp[i+2]===sp[i]+2)return true;
+  return false;
+}
+
+function trySolve(seed,slots){
+  const rng=mulberry32(seed);
+  const asgn={};const tdp={};
+  const st={};
+  STATE.teachers.forEach(t=>{st[t.fullName]={정감독:0,자습:0,복도:0,총:0,마지막:0}});
+  
+  const order=[...Array(slots.length).keys()];
+  shuffle(order,rng);
+  order.sort((a,b)=>{
+    const sa=slots[a],sb=slots[b];
+    const ta=sa.type==='복도'?0:1,tb=sb.type==='복도'?0:1;
+    if(ta!==tb)return ta-tb;
+    const la=sa.period===sa.maxP?0:1,lb=sb.period===sb.maxP?0:1;
+    if(la!==lb)return la-lb;
+    return rng()-0.5;
+  });
+  
+  const avoid3=STATE.specialConstraints.avoid3Consec;
+  const lastLimits=STATE.specialConstraints.lastPeriodLimits;
+  
+  for(const si of order){
+    const s=slots[si];
+    const{day,period,loc,type}=s;
+    const isLast=period===s.maxP;
+    let best=null,bestSc=Infinity;
+    
+    for(const t of STATE.teachers){
+      const fn=t.fullName;
+      if(isUnavail(fn,day,period))continue;
+      const hrm=getHomeroom(fn);
+      if(hrm&&hrm===loc)continue;
+      const key=fn+'|'+day;
+      const periods=tdp[key]||new Set();
+      if(periods.has(period))continue;
+      
+      const pc=STATE.prevCounts[fn]||{정:0,자:0,복:0,총:0,막:0};
+      const c=st[fn];
+      const mtk=type==='정감독'?'정':type==='자습'?'자':'복';
+      const ct=pc.총+c.총,ctp=pc[mtk]+c[type],clm=pc.막+c.마지막;
+      
+      let sc=ct*18+ctp*9+clm*7;
+      if(avoid3&&would3Consec(periods,period))sc+=3000;
+      if(fn in lastLimits&&isLast&&c.마지막>=lastLimits[fn])sc+=8000;
+      if(isLast){if(clm>=5)sc+=600;else if(clm>=4)sc+=250;else if(clm>=3)sc+=70}
+      if(c.총>=10)sc+=500;else if(c.총>=9)sc+=100;
+      if(c[type]>=5)sc+=300;else if(c[type]>=4)sc+=60;
+      sc+=rng()*2.5;
+      
+      if(sc<bestSc){bestSc=sc;best=fn}
+    }
+    if(!best)return null;
+    asgn[si]=best;
+    const key=best+'|'+day;
+    if(!tdp[key])tdp[key]=new Set();
+    tdp[key].add(period);
+    st[best][type]++;st[best].총++;
+    if(isLast)st[best].마지막++;
+  }
+  
+  // Check last period limits
+  for(const[fn,lim]of Object.entries(lastLimits)){
+    if(st[fn]&&st[fn].마지막>lim)return null;
+  }
+  
+  // Score
+  let cc=0;
+  for(const[key,ps]of Object.entries(tdp)){
+    const sp=[...ps].sort((a,b)=>a-b);
+    for(let i=0;i<sp.length-2;i++)if(sp[i+1]===sp[i]+1&&sp[i+2]===sp[i]+2){cc++;break}
+  }
+  const totals=STATE.teachers.map(t=>{const pc=STATE.prevCounts[t.fullName]||{총:0};return pc.총+st[t.fullName].총});
+  const ft=STATE.teachers.map(t=>st[t.fullName].총);
+  let score=cc*500+(Math.max(...totals)-Math.min(...totals))*50+(Math.max(...ft)-Math.min(...ft))*40;
+  for(const[sk,mk]of[['정감독','정'],['자습','자'],['복도','복']]){
+    const vs=STATE.teachers.map(t=>{const pc=STATE.prevCounts[t.fullName]||{};return(pc[mk]||0)+st[t.fullName][sk]});
+    score+=(Math.max(...vs)-Math.min(...vs))*15;
+  }
+  const ls=STATE.teachers.map(t=>{const pc=STATE.prevCounts[t.fullName]||{막:0};return(pc.막||0)+st[t.fullName].마지막});
+  score+=(Math.max(...ls)-Math.min(...ls))*25;
+  
+  return{score,cc,asgn,st,tdp};
+}
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t^=t+Math.imul(t^t>>>7,61|t);return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,rng){for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}}
+
+async function startSolve(){
+  STATE.solving=true;STATE.result=null;STATE.solveProgress=0;render();
+  const slots=buildSlots();
+  const ITERATIONS=3000;
+  let best=null;
+  
+  for(let i=0;i<ITERATIONS;i++){
+    const r=trySolve(i,slots);
+    if(r&&(!best||r.score<best.score))best=r;
+    if(i%100===0){
+      STATE.solveProgress=Math.round(i/ITERATIONS*100);
+      render();
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+  
+  STATE.solving=false;
+  if(best){
+    // Build result data
+    const resultData=[];
+    for(const[si,teacher]of Object.entries(best.asgn)){
+      const s=slots[parseInt(si)];
+      resultData.push({...s,teacher});
+    }
+    STATE.result={data:resultData,stats:best.st,consec:best.cc,score:best.score};
+  }
+  render();
+}
+
+// ===== RESULTS =====
+function renderResults(){
+  const{data,stats,consec}=STATE.result;
+  const wrap=h('div');
+  
+  // Summary stats
+  const sc=h('div',{className:'card'});
+  sc.append(h('h2',null,'✅ 생성 완료'));
+  
+  const totals=STATE.teachers.map(t=>{const pc=STATE.prevCounts[t.fullName]||{총:0};return pc.총+stats[t.fullName].총});
+  const ft=STATE.teachers.map(t=>stats[t.fullName].총);
+  
+  sc.append(h('div',{className:'stat-grid'},
+    h('div',{className:'stat-box'},h('div',{className:'val'},data.length),h('div',{className:'lbl'},'배정된 슬롯')),
+    h('div',{className:'stat-box'},h('div',{className:'val badge-'+(consec<=3?'g':'b')},consec),h('div',{className:'lbl'},'3연속 감독')),
+    h('div',{className:'stat-box'},h('div',{className:'val'},Math.min(...ft)+'~'+Math.max(...ft)),h('div',{className:'lbl'},'기말 총합 범위')),
+    h('div',{className:'stat-box'},h('div',{className:'val'},Math.min(...totals)+'~'+Math.max(...totals)),h('div',{className:'lbl'},'합산 총합 범위')),
+  ));
+  
+  sc.append(h('div',{className:'flex mt16',style:{justifyContent:'center',gap:'12px'}},
+    h('button',{className:'btn btn-grn',style:{fontSize:'1rem',padding:'10px 24px'},on:{click:()=>downloadExcel()}},'📥 엑셀 다운로드'),
+  ));
+  wrap.append(sc);
+  
+  // Schedule tables by day
+  STATE.days.forEach(day=>{
+    const dc=h('div',{className:'card'});
+    dc.append(h('h2',null,day.label));
+    const tbl=h('table');
+    tbl.append(h('tr',null,h('th',null,'학급'),...day.periods.map(p=>h('th',null,`${p}교시`))));
+    
+    CLASSES.forEach(c=>{
+      const row=h('tr',null,h('td',null,c));
+      day.periods.forEach((p,pi)=>{
+        const d=data.find(x=>x.day===day.date&&x.loc===c&&x.period===p);
+        const type=day.slotPatterns[c]?.[pi]||'자습';
+        const cls=type==='자습'?'cell-y':'cell-p';
+        row.append(h('td',{className:cls},d?d.teacher:''));
+      });
+      tbl.append(row);
+    });
+    FLOORS.forEach(f=>{
+      const row=h('tr',null,h('td',null,f));
+      day.periods.forEach(p=>{
+        const d=data.find(x=>x.day===day.date&&x.loc===f&&x.period===p);
+        row.append(h('td',{className:d?'cell-g':''},d?d.teacher:''));
+      });
+      tbl.append(row);
+    });
+    dc.append(h('div',{className:'scroll-x'},tbl));
+    wrap.append(dc);
+  });
+  
+  // Stats table
+  const stCard=h('div',{className:'card'});
+  stCard.append(h('h2',null,'감독 횟수 집계'));
+  const stTbl=h('table');
+  stTbl.append(h('tr',null,h('th',null,'이름'),
+    h('th',null,'기말 정'),h('th',null,'기말 자'),h('th',null,'기말 복'),h('th',null,'기말 총'),h('th',null,'기말 막'),
+    h('th',null,'합계 총'),h('th',null,'합계 막')
+  ));
+  STATE.teachers.forEach(t=>{
+    const s=stats[t.fullName];
+    const pc=STATE.prevCounts[t.fullName]||{정:0,자:0,복:0,총:0,막:0};
+    stTbl.append(h('tr',null,h('td',null,t.fullName),
+      h('td',null,s.정감독),h('td',null,s.자습),h('td',null,s.복도),h('td',null,s.총),h('td',null,s.마지막),
+      h('td',{style:{fontWeight:'600'}},pc.총+s.총),h('td',null,pc.막+s.마지막)
+    ));
+  });
+  stCard.append(h('div',{className:'scroll-x'},stTbl));
+  wrap.append(stCard);
+  
+  return wrap;
+}
+
+// ===== EXCEL EXPORT =====
+function downloadExcel(){
+  if(!STATE.result)return;
+  const{data,stats}=STATE.result;
+  const wb=XLSX.utils.book_new();
+  
+  // Sheet 1: Schedule
+  const ws1Data=[];
+  STATE.days.forEach(day=>{
+    ws1Data.push([day.label]);
+    ws1Data.push(['학급',...day.periods.map(p=>p+'교시')]);
+    ws1Data.push(['',...day.periods.map(()=>'정감독')]);
+    CLASSES.forEach(c=>{
+      const row=[c];
+      day.periods.forEach(p=>{
+        const d=data.find(x=>x.day===day.date&&x.loc===c&&x.period===p);
+        row.push(d?d.teacher:'');
+      });
+      ws1Data.push(row);
+    });
+    FLOORS.forEach(f=>{
+      const row=[f];
+      day.periods.forEach(p=>{
+        const d=data.find(x=>x.day===day.date&&x.loc===f&&x.period===p);
+        row.push(d?d.teacher:'');
+      });
+      ws1Data.push(row);
+    });
+    ws1Data.push([]);
+  });
+  const ws1=XLSX.utils.aoa_to_sheet(ws1Data);
+  ws1['!cols']=[{wch:12},...STATE.days[0].periods.map(()=>({wch:14}))];
+  XLSX.utils.book_append_sheet(wb,ws1,'기말고사 감독표');
+  
+  // Sheet 2: Stats
+  const ws2Data=[['감독 횟수 집계'],
+    ['이름','중간 정','중간 자','중간 복','중간 총','중간 막','기말 정','기말 자','기말 복','기말 총','기말 막','합계 정','합계 자','합계 복','합계 총','합계 막']
+  ];
+  STATE.teachers.forEach(t=>{
+    const s=stats[t.fullName];
+    const pc=STATE.prevCounts[t.fullName]||{정:0,자:0,복:0,총:0,막:0};
+    ws2Data.push([t.fullName,pc.정,pc.자,pc.복,pc.총,pc.막,s.정감독,s.자습,s.복도,s.총,s.마지막,
+      pc.정+s.정감독,pc.자+s.자습,pc.복+s.복도,pc.총+s.총,pc.막+s.마지막]);
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(ws2Data);
+  ws2['!cols']=[{wch:14},...Array(15).fill({wch:8})];
+  XLSX.utils.book_append_sheet(wb,ws2,'감독 횟수 집계');
+  
+  XLSX.writeFile(wb,'감독표_완성.xlsx');
+}
+
+// ===== INIT =====
+loadState();
+render();
+</script>
+</body>
+</html>
